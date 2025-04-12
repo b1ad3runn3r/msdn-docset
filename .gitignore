@@ -1,0 +1,6 @@
+venv
+_build_msdn
+/tmp
+
+*.tgz
+.idea
