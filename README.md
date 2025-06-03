@@ -16,6 +16,7 @@ internet connection.
   - Enums
   - Classes
   - SDK API reference
+  - And more
 
 ## Setup
 
