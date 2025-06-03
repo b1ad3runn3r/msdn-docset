@@ -1061,12 +1061,12 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-    if args.verbose:
-        logger.basicConfig(level=logger.DEBUG)
-        logger.getLogger("requests").setLevel(logger.WARNING)
-        logger.getLogger("urllib3").setLevel(logger.WARNING)
-    else:
-        logger.basicConfig(level=logger.INFO)
+    #if args.verbose:
+        # logger.basicConfig(level=logger.DEBUG)
+    logging.getLogger("requests").setLevel(logger.WARNING)
+    logging.getLogger("urllib3").setLevel(logger.WARNING)
+    #else:
+    #    logger.basicConfig(level=logger.INFO)
 
     if args.command == "rewrite_html":
 
