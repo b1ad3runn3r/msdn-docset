@@ -24,6 +24,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from urllib3.util.retry import Retry
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='example.log', encoding='utf-8', level=logger.DEBUG)
+
 
 # from selenium.webdriver import Firefox
 # from selenium.webdriver.firefox.options import Options
@@ -53,7 +56,7 @@ class PoshWebDriver:
             # Lay low for several seconds and get back to it.
 
             self.driver.quit()
-            time.sleep(2)
+            time.sleep(5)
 
             self.driver = webdriver.Chrome(options=self.options)
 
@@ -126,7 +129,7 @@ def download_binary(url, output_filename):
     """ Download GET request as binary file """
     global session
 
-    logging.debug("download_binary : %s -> %s" % (url, output_filename))
+    logger.debug("download_binary : %s -> %s" % (url, output_filename))
 
     # ensure the folder path actually exist
     os.makedirs(os.path.dirname(output_filename), exist_ok=True)
@@ -141,8 +144,7 @@ def download_textfile(url: str, output_filename: str, params: dict = None):
     """ Download GET request as utf-8 text file """
     global session
 
-    logging.debug("download_textfile : %s -> %s" % (url, output_filename))
-
+    logger.debug("download_textfile : %s -> %s" % (url, output_filename))
     # ensure the folder path actually exist
     os.makedirs(os.path.dirname(output_filename), exist_ok=True)
 
@@ -150,7 +152,7 @@ def download_textfile(url: str, output_filename: str, params: dict = None):
         try:
             r = session.get(url, data=params)
         except ConnectionError:
-            logging.debug("caught ConnectionError, retrying...")
+            logger.debug("caught ConnectionError, retrying...")
             time.sleep(2)
         else:
             break
@@ -195,7 +197,7 @@ def download_module_contents(configuration, module_name, module_uri, module_dir,
 
     module_filepath = os.path.join(module_dir, "%s.html" % module_name)
 
-    logging.debug("downloading %s module index page  -> %s" % (module_name, module_filepath))
+    logger.debug("downloading %s module index page  -> %s" % (module_name, module_filepath))
     if module_uri:
         download_page_contents(configuration, module_uri, module_filepath)
 
@@ -211,7 +213,7 @@ def download_module_contents(configuration, module_name, module_uri, module_dir,
         cmdlet_uri = cmdlet["href"]
         cmdlet_filepath = os.path.join(module_dir, "%s.html" % cmdlet_name)
 
-        logging.debug("downloading %s cmdlet doc -> %s" % (cmdlet_name, cmdlet_filepath))
+        logger.debug("downloading %s cmdlet doc -> %s" % (cmdlet_name, cmdlet_filepath))
         download_page_contents(configuration, cmdlet_uri, cmdlet_filepath)
 
         cmdlets_infos.append(
@@ -267,16 +269,16 @@ def crawl_sdk_api_folder(
             download_dir,
             "docs.microsoft.com/en-us/windows/win32/api/{0:s}/{1:s}.html".format(realarb, page_filename)
         )
-        logging.info("[+] download page %s  -> %s " % (url, filepath))
+        logger.info("[+] download page %s  -> %s " % (url, filepath))
         success = download_textfile(url, filepath)
 
         if not success:
-            logging.info("[X] could not download page %s  -> %s " % (url, filepath))
+            logger.info("[X] could not download page %s  -> %s " % (url, filepath))
             continue
 
         url_relpath = "/windows/win32/api/{0:s}/{1:s}".format(realarb, page_filename)
         page_title = _findname(api_content_toc['toc'][directory]['items'][0], url_relpath)
-        # logging.info("[+] %s => title '%s'" % (url_relpath, page_title))
+        # logger.info("[+] %s => title '%s'" % (url_relpath, page_title))
 
         if page_filename.startswith("nc-"):
             category = "callbacks"
@@ -326,12 +328,12 @@ def crawl_sdk_api_contents(configuration: Configuration, download_dir: str, sour
 
         # download toc for directory
         toc_url = "https://docs.microsoft.com/en-us/windows/win32/api/{0:s}/toc.json".format(directory)
-        logging.info("[+] download toc for directory %s" % (toc_url))
+        logger.info("[+] download toc for directory %s" % (toc_url))
         toc_r = requests.get(toc_url)
         if toc_r.status_code == 200:
             api_content_toc['toc'][directory] = json.loads(requests.get(toc_url).text)
         else:
-            logging.warning("[!] directory %s has no TOC !" % (toc_url))
+            logger.warning("[!] directory %s has no TOC !" % (toc_url))
 
         # only index folders with a toc
         if not api_content_toc['toc'].get(directory, None):
@@ -348,7 +350,7 @@ def crawl_sdk_api_contents(configuration: Configuration, download_dir: str, sour
                 "docs.microsoft.com/en-us/windows/win32/api/{0:s}".format(directory),
                 "index.html"
             )
-            logging.info("[+] download page %s  -> %s " % (url, filepath))
+            logger.info("[+] download page %s  -> %s " % (url, filepath))
             download_textfile(url, filepath)
 
             category_title = api_content_toc['toc'][directory]['items'][0]['toc_title']
@@ -373,7 +375,7 @@ def crawl_sdk_api_contents(configuration: Configuration, download_dir: str, sour
                 "docs.microsoft.com/en-us/windows/win32/api/{0:s}".format(directory),
                 "index.html"
             )
-            logging.info("[+] download page %s  -> %s " % (url, filepath))
+            logger.info("[+] download page %s  -> %s " % (url, filepath))
             download_textfile(url, filepath)
 
             category_title = directory
@@ -432,7 +434,7 @@ def crawl_msdn_contents(configuration: Configuration, download_dir: str, source_
             # retrieve html of page
             page_dir = os.path.join(download_dir, "docs.microsoft.com/win32", realarb)
             filepath = os.path.join(page_dir, "%s.html" % page_filename)
-            logging.debug("[+] download page %s  -> %s " % (url, filepath))
+            logger.debug("[+] download page %s  -> %s " % (url, filepath))
             download_textfile(url, filepath)
 
             # don't care about top level pages
@@ -446,7 +448,7 @@ def crawl_msdn_contents(configuration: Configuration, download_dir: str, source_
                 toc_url = "https://docs.microsoft.com/en-us/windows/win32/{0:s}/toc.json".format(
                     realarb
                 )
-                logging.info("[+] download toc for page %s" % (toc_url))
+                logger.info("[+] download toc for page %s" % (toc_url))
 
                 toc_r = requests.get(toc_url)
                 if toc_r.status_code != 200:
@@ -488,7 +490,7 @@ def crawl_msdn_contents(configuration: Configuration, download_dir: str, source_
 
             # Class page
             if "ADSchema" in realarb and page_filename.startswith("c-"):
-                logging.info("[+] new class page %s" % (page_filename))
+                logger.info("[+] new class page %s" % (page_filename))
 
                 page_title = _findname(content_toc['toc'][realarb]['toc']['items'][0], page_filename)
                 if not page_title:
@@ -503,7 +505,7 @@ def crawl_msdn_contents(configuration: Configuration, download_dir: str, source_
 
             # Attribute page
             elif "ADSchema" in realarb and page_filename.startswith("a-"):
-                logging.debug("[+] new attribute page %s" % (page_filename))
+                logger.debug("[+] new attribute page %s" % (page_filename))
 
                 page_title = _findname(content_toc['toc'][realarb]['toc']['items'][0], page_filename)
                 if not page_title:
@@ -530,8 +532,8 @@ def crawl_msdn_contents(configuration: Configuration, download_dir: str, source_
                         }
                     )
                 except Exception as e:
-                    logging.warning("[!] could not find a name for page %s" % page_filename)
-                    logging.warning("[!] %s" % e)
+                    logger.warning("[!] could not find a name for page %s" % page_filename)
+                    logger.warning("[!] %s" % e)
 
 
             # counter+=1
@@ -570,7 +572,7 @@ def rewrite_soup(configuration: Configuration, soup, html_path: str, documents_d
             fixed_href = "%s.html" % page_target
 
         if fixed_href != href:
-            logging.info("link rewrite : %s -> %s " % (href, fixed_href))
+            logger.info("link rewrite : %s -> %s " % (href, fixed_href))
             link['href'] = fixed_href
 
     # remove link to external references if we can't support it
@@ -597,7 +599,7 @@ def rewrite_soup(configuration: Configuration, soup, html_path: str, documents_d
             else:
                 rel_href = "%s.html" % rel_href
 
-            logging.info("link rewrite : %s -> %s " % (abs_href['href'], rel_href))
+            logger.info("link rewrite : %s -> %s " % (abs_href['href'], rel_href))
             abs_href['href'] = rel_href
             abs_href['data-linktype'] = "relative-path"
 
@@ -624,7 +626,7 @@ def rewrite_soup(configuration: Configuration, soup, html_path: str, documents_d
             else:
                 rel_href = "%s.html" % rel_href
 
-            logging.info("link rewrite : %s -> %s " % (abs_href['href'], rel_href))
+            logger.info("link rewrite : %s -> %s " % (abs_href['href'], rel_href))
             abs_href['href'] = rel_href
             abs_href['data-linktype'] = "relative-path"
 
@@ -650,7 +652,7 @@ def rewrite_soup(configuration: Configuration, soup, html_path: str, documents_d
             else:
                 rel_href = "%s.html" % rel_href
 
-            logging.info("link rewrite : %s -> %s " % (abs_href['href'], rel_href))
+            logger.info("link rewrite : %s -> %s " % (abs_href['href'], rel_href))
             abs_href['href'] = rel_href
             abs_href['data-linktype'] = "relative-path"
 
@@ -734,7 +736,7 @@ def rewrite_html_contents(configuration: Configuration, html_root_dir: str):
     additional_resources = set()
 
     for html_file in glob.glob("%s/**/*.html" % html_root_dir, recursive=True):
-        logging.info("rewrite  html_file : %s" % (html_file))
+        logger.info("rewrite  html_file : %s" % (html_file))
 
         # Read content and parse html
         with open(html_file, 'r', encoding='utf8') as i_fd:
@@ -796,9 +798,9 @@ def create_sqlite_database(configuration, content_toc, resources_dir, documents_
                     'INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?,?,?)',
                     (name, record_type, path)
                 )
-                logging.debug('DB add [%s] >> name: %s, path: %s' % (record_type, name, path))
+                logger.debug('DB add [%s] >> name: %s, path: %s' % (record_type, name, path))
             else:
-                logging.debug('record exists')
+                logger.debug('record exists')
 
         except:
             pass
@@ -930,7 +932,7 @@ def main(configuration: Configuration):
 
     if conf.crawl_contents:
         # cloning source directories for scraping contents, extremely long operation
-        logging.info(
+        logger.info(
             "Downloading win32 markdown zipped sources : %s -> %s" % (
             "https://github.com/MicrosoftDocs/win32/archive/refs/heads/docs.zip", os.path.join(source_dir, "docs.zip"))
         )
@@ -939,11 +941,11 @@ def main(configuration: Configuration):
             os.path.join(source_dir, "docs.zip")
         )
 
-        logging.info("Extracting win32 markdown zipped sources : ")
+        logger.info("Extracting win32 markdown zipped sources : ")
         with zipfile.ZipFile(os.path.join(source_dir, "docs.zip"), 'r') as zip_ref:
             zip_ref.extractall(source_dir)
 
-        logging.info(
+        logger.info(
             "Downloading sdk-api markdown zipped sources : %s -> %s" % (
             "https://github.com/MicrosoftDocs/win32/archive/refs/heads/docs.zip", os.path.join(source_dir, "docs.zip"))
         )
@@ -952,16 +954,16 @@ def main(configuration: Configuration):
             os.path.join(api_source_dir, "docs.zip")
         )
 
-        logging.info("Extracting api-sdk markdown zipped sources : ")
+        logger.info("Extracting api-sdk markdown zipped sources : ")
         with zipfile.ZipFile(os.path.join(api_source_dir, "docs.zip"), 'r') as zip_ref:
             zip_ref.extractall(api_source_dir)
 
         """ 1. Download html pages """
-        logging.info("[1] scraping win32 web contents")
+        logger.info("[1] scraping win32 web contents")
         content_toc = {}
         content_toc = crawl_msdn_contents(configuration, download_dir, source_dir)
 
-        logging.info("[1] scraping sdk-api web contents")
+        logger.info("[1] scraping sdk-api web contents")
         api_content_toc = crawl_sdk_api_contents(configuration, download_dir, api_source_dir)
 
         # Merge win32 api content
@@ -974,17 +976,17 @@ def main(configuration: Configuration):
             content_toc = json.load(content)
 
     """ 2.  Parse and rewrite html contents """
-    logging.info("[2] rewriting urls and hrefs")
+    logger.info("[2] rewriting urls and hrefs")
     copy_folder(download_dir, html_rewrite_dir)
     resources_to_dl = rewrite_html_contents(configuration, html_rewrite_dir)
 
     """ 3.  Download additionnal resources """
-    logging.info("[3] download style contents")
+    logger.info("[3] download style contents")
     copy_folder(html_rewrite_dir, additional_resources_dir)
     download_additional_resources(configuration, additional_resources_dir, resources_to_dl)
 
     """ 4.  Database indexing """
-    logging.info("[4] indexing to database")
+    logger.info("[4] indexing to database")
     copy_folder(additional_resources_dir, document_dir)
     create_sqlite_database(configuration, content_toc, resources_dir, document_dir)
 
@@ -998,7 +1000,7 @@ def main(configuration: Configuration):
     output_dir = os.path.dirname(configuration.output_filepath)
     os.makedirs(output_dir, exist_ok=True)
 
-    logging.info("[5] packaging as a dash docset")
+    logger.info("[5] packaging as a dash docset")
     make_docset(
         docset_dir,
         configuration.output_filepath,
@@ -1060,11 +1062,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
-        logging.getLogger("requests").setLevel(logging.WARNING)
-        logging.getLogger("urllib3").setLevel(logging.WARNING)
+        logger.basicConfig(level=logger.DEBUG)
+        logger.getLogger("requests").setLevel(logger.WARNING)
+        logger.getLogger("urllib3").setLevel(logger.WARNING)
     else:
-        logging.basicConfig(level=logging.INFO)
+        logger.basicConfig(level=logger.INFO)
 
     if args.command == "rewrite_html":
 
