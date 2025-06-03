@@ -25,7 +25,7 @@ from selenium.webdriver.chrome.options import Options
 from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='example.log', encoding='utf-8', level=logger.DEBUG)
+logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
 
 
 # from selenium.webdriver import Firefox
