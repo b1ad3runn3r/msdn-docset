@@ -1063,8 +1063,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     #if args.verbose:
         # logger.basicConfig(level=logger.DEBUG)
-    logging.getLogger("requests").setLevel(logger.WARNING)
-    logging.getLogger("urllib3").setLevel(logger.WARNING)
+    logging.getLogger("requests").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
     #else:
     #    logger.basicConfig(level=logger.INFO)
 
